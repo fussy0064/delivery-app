@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 
 export default function Home() {
@@ -17,12 +18,18 @@ export default function Home() {
             <span className="text-xl font-bold text-gray-900">SwiftDeliver</span>
           </div>
           <div className="flex items-center gap-3">
-            <button className="text-sm font-medium text-gray-600 hover:text-orange-500">
+            <Link
+              href="/login"
+              className="text-sm font-medium text-gray-600 hover:text-orange-500"
+            >
               Login
-            </button>
-            <button className="bg-orange-500 text-white text-sm font-medium px-4 py-2 rounded-full hover:bg-orange-600 transition">
+            </Link>
+            <Link
+              href="/register"
+              className="bg-orange-500 text-white text-sm font-medium px-4 py-2 rounded-full hover:bg-orange-600 transition"
+            >
               Sign Up
-            </button>
+            </Link>
           </div>
         </div>
       </header>
