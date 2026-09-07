@@ -1,18 +1,57 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect, Suspense } from "react";
+import dynamic from "next/dynamic";
+import { useSearchParams } from "next/navigation";
+import { supabase } from "@/lib/supabase";
 
-export default function TrackPage() {
-  const [orderId, setOrderId] = useState("ORD-101");
-  const [status] = useState("On the way");
+const Map = dynamic(() => import("@/components/Map"), {
+  ssr: false,
+  loading: () => (
+    <div className="h-64 bg-gray-100 rounded-2xl flex items-center justify-center text-gray-500">
+      Loading map...
+    </div>
+  ),
+});
 
-  // Mock driver location progress (0-100)
-  const progress = 65;
+function TrackContent() {
+  const searchParams = useSearchParams();
+  const orderId = searchParams.get("id") || "";
+
+  const [order, setOrder] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!orderId) {
+      setLoading(false);
+      return;
+    }
+
+    const fetchOrder = async () => {
+      const { data } = await supabase
+        .from("orders")
+        .select("*")
+        .eq("id", orderId)
+        .single();
+
+      setOrder(data);
+      setLoading(false);
+    };
+
+    fetchOrder();
+  }, [orderId]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-gray-500">
+        Loading order...
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
       <header className="bg-white shadow-sm sticky top-0 z-10">
         <div className="max-w-3xl mx-auto px-4 py-4 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2">
@@ -28,106 +67,88 @@ export default function TrackPage() {
       </header>
 
       <main className="max-w-3xl mx-auto px-4 py-6">
-        {/* Order Info */}
         <div className="bg-white rounded-2xl shadow-sm p-5 mb-5">
           <div className="flex justify-between items-start mb-4">
             <div>
               <p className="text-sm text-gray-500">Order ID</p>
-              <p className="font-bold text-lg">{orderId}</p>
+              <p className="font-bold text-lg">
+                {order ? order.id.slice(0, 8) : "No order"}
+              </p>
             </div>
-            <span className="bg-orange-100 text-orange-700 text-sm font-semibold px-3 py-1 rounded-full">
-              {status}
+            <span className="bg-orange-100 text-orange-700 text-sm font-semibold px-3 py-1 rounded-full capitalize">
+              {order?.status || "pending"}
             </span>
           </div>
 
-          <div className="space-y-2 text-sm">
-            <p>
-              <span className="text-gray-500">From:</span> Pizza Hut - Msasani
-            </p>
-            <p>
-              <span className="text-gray-500">To:</span> Mikocheni B
-            </p>
-            <p>
-              <span className="text-gray-500">Driver:</span> John M. • +255 712 345 678
-            </p>
-          </div>
+          {order && (
+            <div className="space-y-2 text-sm">
+              <p>
+                <span className="text-gray-500">From:</span> {order.from_address}
+              </p>
+              <p>
+                <span className="text-gray-500">To:</span> {order.to_address}
+              </p>
+              <p>
+                <span className="text-gray-500">Total:</span>{" "}
+                TSh {Number(order.total_amount || 0).toLocaleString()}
+              </p>
+            </div>
+          )}
         </div>
 
-        {/* Simple Map Placeholder */}
-        <div className="bg-white rounded-2xl shadow-sm overflow-hidden mb-5">
-          <div className="h-64 bg-gradient-to-br from-blue-100 to-green-100 relative flex items-center justify-center">
-            <div className="text-center">
-              <div className="text-4xl mb-2">🗺️</div>
-              <p className="font-semibold text-gray-700">Live Map</p>
-              <p className="text-sm text-gray-500">Driver is 2.4 km away</p>
-            </div>
-
-            {/* Fake route line */}
-            <div className="absolute bottom-6 left-6 right-6">
-              <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-orange-500 rounded-full transition-all"
-                  style={{ width: `${progress}%` }}
-                />
-              </div>
-              <div className="flex justify-between text-xs text-gray-500 mt-1">
-                <span>Picked up</span>
-                <span>On the way</span>
-                <span>Delivered</span>
-              </div>
-            </div>
-          </div>
+        <div className="bg-white rounded-2xl shadow-sm overflow-hidden mb-5 h-72">
+          <Map
+            driverLat={-6.7924}
+            driverLng={39.2083}
+            destLat={-6.78}
+            destLng={39.22}
+          />
         </div>
 
-        {/* Status Steps */}
         <div className="bg-white rounded-2xl shadow-sm p-5">
           <h3 className="font-bold mb-4">Order Status</h3>
           <div className="space-y-4">
             {[
-              { label: "Order Placed", done: true, time: "18:42" },
-              { label: "Driver Accepted", done: true, time: "18:45" },
-              { label: "Picked Up", done: true, time: "18:58" },
-              { label: "On the Way", done: true, time: "19:05" },
-              { label: "Delivered", done: false, time: "" },
-            ].map((step, i) => (
-              <div key={i} className="flex items-center gap-3">
-                <div
-                  className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
-                    step.done
-                      ? "bg-orange-500 text-white"
-                      : "bg-gray-200 text-gray-400"
-                  }`}
-                >
-                  {step.done ? "✓" : i + 1}
-                </div>
-                <div className="flex-1">
+              { key: "pending", label: "Order Placed" },
+              { key: "accepted", label: "Driver Accepted" },
+              { key: "picked", label: "Picked Up" },
+              { key: "on_the_way", label: "On the Way" },
+              { key: "delivered", label: "Delivered" },
+            ].map((step, i) => {
+              const statusOrder = ["pending", "accepted", "picked", "on_the_way", "delivered"];
+              const currentIndex = statusOrder.indexOf(order?.status || "pending");
+              const done = i <= currentIndex;
+
+              return (
+                <div key={step.key} className="flex items-center gap-3">
+                  <div
+                    className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
+                      done ? "bg-orange-500 text-white" : "bg-gray-200 text-gray-400"
+                    }`}
+                  >
+                    {done ? "✓" : i + 1}
+                  </div>
                   <p
                     className={`text-sm font-medium ${
-                      step.done ? "text-gray-900" : "text-gray-400"
+                      done ? "text-gray-900" : "text-gray-400"
                     }`}
                   >
                     {step.label}
                   </p>
                 </div>
-                {step.time && (
-                  <span className="text-xs text-gray-400">{step.time}</span>
-                )}
-              </div>
-            ))}
+              );
+            })}
           </div>
-        </div>
-
-        {/* Search another order */}
-        <div className="mt-6">
-          <input
-            type="text"
-            value={orderId}
-            onChange={(e) => setOrderId(e.target.value)}
-            placeholder="Enter Order ID to track"
-            className="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-orange-400"
-          />
         </div>
       </main>
     </div>
+  );
+}
+
+export default function TrackPage() {
+  return (
+    <Suspense fallback={<div className="p-10 text-center">Loading...</div>}>
+      <TrackContent />
+    </Suspense>
   );
 }
