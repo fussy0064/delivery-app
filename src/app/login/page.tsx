@@ -2,16 +2,38 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { supabase } from "@/lib/supabase";
 
 export default function LoginPage() {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [role, setRole] = useState<"user" | "driver">("user");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Later: connect to real auth
-    alert(`Login as ${role}\nEmail: ${email}`);
+    setLoading(true);
+    setError("");
+
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (error) {
+      setError(error.message);
+      setLoading(false);
+      return;
+    }
+
+    if (role === "driver") {
+      router.push("/driver");
+    } else {
+      router.push("/");
+    }
   };
 
   return (
@@ -28,7 +50,6 @@ export default function LoginPage() {
           <p className="text-gray-500 text-sm mt-1">Login to continue</p>
         </div>
 
-        {/* Role toggle */}
         <div className="flex bg-gray-100 rounded-full p-1 mb-6">
           <button
             type="button"
@@ -51,6 +72,12 @@ export default function LoginPage() {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          {error && (
+            <div className="bg-red-50 text-red-600 text-sm p-3 rounded-xl">
+              {error}
+            </div>
+          )}
+
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Email
@@ -81,9 +108,10 @@ export default function LoginPage() {
 
           <button
             type="submit"
-            className="w-full bg-orange-500 text-white font-semibold py-3.5 rounded-xl hover:bg-orange-600 transition"
+            disabled={loading}
+            className="w-full bg-orange-500 text-white font-semibold py-3.5 rounded-xl hover:bg-orange-600 transition disabled:opacity-60"
           >
-            Login
+            {loading ? "Logging in..." : "Login"}
           </button>
         </form>
 

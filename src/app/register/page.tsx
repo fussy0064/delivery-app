@@ -2,18 +2,50 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { supabase } from "@/lib/supabase";
 
 export default function RegisterPage() {
+  const router = useRouter();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [phone, setPhone] = useState("");
   const [role, setRole] = useState<"user" | "driver">("user");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Later: connect to real auth
-    alert(`Registered as ${role}\nName: ${name}\nEmail: ${email}`);
+    setLoading(true);
+    setError("");
+    setSuccess("");
+
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          full_name: name,
+          phone,
+          role,
+        },
+      },
+    });
+
+    if (error) {
+      setError(error.message);
+      setLoading(false);
+      return;
+    }
+
+    setSuccess("Account created! Check your email to confirm, then login.");
+    setLoading(false);
+
+    setTimeout(() => {
+      router.push("/login");
+    }, 2500);
   };
 
   return (
@@ -30,7 +62,6 @@ export default function RegisterPage() {
           <p className="text-gray-500 text-sm mt-1">Join SwiftDeliver today</p>
         </div>
 
-        {/* Role toggle */}
         <div className="flex bg-gray-100 rounded-full p-1 mb-6">
           <button
             type="button"
@@ -53,6 +84,17 @@ export default function RegisterPage() {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          {error && (
+            <div className="bg-red-50 text-red-600 text-sm p-3 rounded-xl">
+              {error}
+            </div>
+          )}
+          {success && (
+            <div className="bg-green-50 text-green-700 text-sm p-3 rounded-xl">
+              {success}
+            </div>
+          )}
+
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Full Name
@@ -112,9 +154,10 @@ export default function RegisterPage() {
 
           <button
             type="submit"
-            className="w-full bg-orange-500 text-white font-semibold py-3.5 rounded-xl hover:bg-orange-600 transition"
+            disabled={loading}
+            className="w-full bg-orange-500 text-white font-semibold py-3.5 rounded-xl hover:bg-orange-600 transition disabled:opacity-60"
           >
-            Create Account
+            {loading ? "Creating..." : "Create Account"}
           </button>
         </form>
 
