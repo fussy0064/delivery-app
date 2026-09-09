@@ -23,6 +23,15 @@ export default function Home() {
     return 12000;
   };
 
+  // Simple estimated distance (demo)
+  const getDistance = () => {
+    if (!pickup || !dropoff) return null;
+    // Fake but realistic distance for demo (later we use real geocoding)
+    const base = pickup.length + dropoff.length;
+    const km = (3 + (base % 12)).toFixed(1);
+    return km;
+  };
+
   const placePackageOrder = async () => {
     if (!pickup.trim() || !dropoff.trim()) {
       setError("Please enter both pickup and delivery address");
@@ -196,11 +205,16 @@ export default function Home() {
                 <option value="large">Large package (15kg+) – TSh 12,000</option>
               </select>
 
-              <div className="bg-orange-50 rounded-xl p-3 text-center">
+              <div className="bg-orange-50 rounded-xl p-3 text-center space-y-1">
                 <p className="text-sm text-gray-600">Estimated Price</p>
                 <p className="text-xl font-bold text-orange-600">
                   TSh {getPrice().toLocaleString()}
                 </p>
+                {getDistance() && (
+                  <p className="text-sm text-gray-500">
+                    📍 Approx. distance: <span className="font-semibold">{getDistance()} km</span>
+                  </p>
+                )}
               </div>
 
               {error && (

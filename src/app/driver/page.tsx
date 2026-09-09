@@ -1,66 +1,86 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { supabase } from "@/lib/supabase";
 
 type Order = {
   id: string;
   type: "food" | "package";
-  from: string;
-  to: string;
-  earnings: string;
-  status: "available" | "accepted" | "picked" | "delivered";
+  from_address: string;
+  to_address: string;
+  total_amount: number;
+  status: string;
+  created_at: string;
 };
 
-const mockOrders: Order[] = [
-  {
-    id: "ORD-101",
-    type: "food",
-    from: "Pizza Hut - Msasani",
-    to: "Mikocheni B",
-    earnings: "TSh 4,500",
-    status: "available",
-  },
-  {
-    id: "ORD-102",
-    type: "package",
-    from: "Kariakoo Market",
-    to: "Masaki",
-    earnings: "TSh 6,000",
-    status: "available",
-  },
-  {
-    id: "ORD-103",
-    type: "food",
-    from: "KFC - Slipway",
-    to: "Oysterbay",
-    earnings: "TSh 3,800",
-    status: "available",
-  },
-];
-
 export default function DriverDashboard() {
-  const [orders, setOrders] = useState<Order[]>(mockOrders);
+  const router = useRouter();
+  const [orders, setOrders] = useState<Order[]>([]);
   const [isOnline, setIsOnline] = useState(true);
+  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<any>(null);
 
-  const acceptOrder = (id: string) => {
-    setOrders((prev) =>
-      prev.map((o) => (o.id === id ? { ...o, status: "accepted" } : o))
-    );
+  useEffect(() => {
+    const checkUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        router.push("/login");
+        return;
+      }
+      setUser(user);
+      fetchOrders();
+    };
+    checkUser();
+  }, [router]);
+
+  const fetchOrders = async () => {
+    const { data, error } = await supabase
+      .from("orders")
+      .select("*")
+      .in("status", ["pending", "accepted", "picked", "on_the_way"])
+      .order("created_at", { ascending: false });
+
+    if (!error && data) {
+      setOrders(data);
+    }
+    setLoading(false);
   };
 
-  const updateStatus = (id: string, status: Order["status"]) => {
-    setOrders((prev) =>
-      prev.map((o) => (o.id === id ? { ...o, status } : o))
-    );
+  const acceptOrder = async (id: string) => {
+    const { error } = await supabase
+      .from("orders")
+      .update({ status: "accepted", driver_id: user?.id })
+      .eq("id", id);
+
+    if (!error) fetchOrders();
   };
 
-  const available = orders.filter((o) => o.status === "available");
-  const active = orders.filter((o) => o.status !== "available" && o.status !== "delivered");
+  const updateStatus = async (id: string, status: string) => {
+    const { error } = await supabase
+      .from("orders")
+      .update({ status })
+      .eq("id", id);
+
+    if (!error) fetchOrders();
+  };
+
+  const available = orders.filter((o) => o.status === "pending");
+  const active = orders.filter((o) =>
+    ["accepted", "picked", "on_the_way"].includes(o.status)
+  );
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-gray-500">
+        Loading...
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
       <header className="bg-white shadow-sm sticky top-0 z-10">
         <div className="max-w-3xl mx-auto px-4 py-4 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2">
@@ -74,25 +94,28 @@ export default function DriverDashboard() {
             <button
               onClick={() => setIsOnline(!isOnline)}
               className={`text-xs font-semibold px-3 py-1.5 rounded-full ${
-                isOnline
-                  ? "bg-green-100 text-green-700"
-                  : "bg-gray-200 text-gray-600"
+                isOnline ? "bg-green-100 text-green-700" : "bg-gray-200 text-gray-600"
               }`}
             >
               {isOnline ? "● Online" : "○ Offline"}
             </button>
-            <Link href="/login" className="text-sm text-gray-500 hover:text-orange-500">
+            <button
+              onClick={async () => {
+                await supabase.auth.signOut();
+                router.push("/login");
+              }}
+              className="text-sm text-gray-500 hover:text-orange-500"
+            >
               Logout
-            </Link>
+            </button>
           </div>
         </div>
       </header>
 
       <main className="max-w-3xl mx-auto px-4 py-6">
-        {/* Stats */}
         <div className="grid grid-cols-3 gap-3 mb-6">
           <div className="bg-white rounded-xl p-4 text-center shadow-sm">
-            <p className="text-2xl font-bold text-orange-500">3</p>
+            <p className="text-2xl font-bold text-orange-500">{available.length}</p>
             <p className="text-xs text-gray-500">Available</p>
           </div>
           <div className="bg-white rounded-xl p-4 text-center shadow-sm">
@@ -100,12 +123,11 @@ export default function DriverDashboard() {
             <p className="text-xs text-gray-500">Active</p>
           </div>
           <div className="bg-white rounded-xl p-4 text-center shadow-sm">
-            <p className="text-2xl font-bold text-green-500">TSh 0</p>
+            <p className="text-2xl font-bold text-green-500">—</p>
             <p className="text-xs text-gray-500">Today</p>
           </div>
         </div>
 
-        {/* Active Orders */}
         {active.length > 0 && (
           <section className="mb-8">
             <h2 className="font-bold text-gray-900 mb-3">Active Orders</h2>
@@ -120,15 +142,17 @@ export default function DriverDashboard() {
                       <span className="text-xs font-medium bg-orange-100 text-orange-700 px-2 py-0.5 rounded">
                         {order.type === "food" ? "🍔 Food" : "📦 Package"}
                       </span>
-                      <p className="font-semibold mt-1">{order.id}</p>
+                      <p className="font-semibold mt-1">{order.id.slice(0, 8)}</p>
                     </div>
-                    <span className="font-bold text-green-600">{order.earnings}</span>
+                    <span className="font-bold text-green-600">
+                      TSh {Number(order.total_amount).toLocaleString()}
+                    </span>
                   </div>
                   <p className="text-sm text-gray-600">
-                    <span className="font-medium">From:</span> {order.from}
+                    <span className="font-medium">From:</span> {order.from_address}
                   </p>
                   <p className="text-sm text-gray-600 mb-3">
-                    <span className="font-medium">To:</span> {order.to}
+                    <span className="font-medium">To:</span> {order.to_address}
                   </p>
 
                   <div className="flex gap-2">
@@ -141,6 +165,14 @@ export default function DriverDashboard() {
                       </button>
                     )}
                     {order.status === "picked" && (
+                      <button
+                        onClick={() => updateStatus(order.id, "on_the_way")}
+                        className="flex-1 bg-purple-500 text-white text-sm font-medium py-2 rounded-lg"
+                      >
+                        Start Delivery
+                      </button>
+                    )}
+                    {order.status === "on_the_way" && (
                       <button
                         onClick={() => updateStatus(order.id, "delivered")}
                         className="flex-1 bg-green-500 text-white text-sm font-medium py-2 rounded-lg"
@@ -155,7 +187,6 @@ export default function DriverDashboard() {
           </section>
         )}
 
-        {/* Available Orders */}
         <section>
           <h2 className="font-bold text-gray-900 mb-3">
             Available Orders {isOnline ? "" : "(Go Online to accept)"}
@@ -172,24 +203,23 @@ export default function DriverDashboard() {
           ) : (
             <div className="space-y-3">
               {available.map((order) => (
-                <div
-                  key={order.id}
-                  className="bg-white rounded-xl p-4 shadow-sm"
-                >
+                <div key={order.id} className="bg-white rounded-xl p-4 shadow-sm">
                   <div className="flex justify-between items-start mb-2">
                     <div>
                       <span className="text-xs font-medium bg-gray-100 text-gray-700 px-2 py-0.5 rounded">
                         {order.type === "food" ? "🍔 Food" : "📦 Package"}
                       </span>
-                      <p className="font-semibold mt-1">{order.id}</p>
+                      <p className="font-semibold mt-1">{order.id.slice(0, 8)}</p>
                     </div>
-                    <span className="font-bold text-green-600">{order.earnings}</span>
+                    <span className="font-bold text-green-600">
+                      TSh {Number(order.total_amount).toLocaleString()}
+                    </span>
                   </div>
                   <p className="text-sm text-gray-600">
-                    <span className="font-medium">From:</span> {order.from}
+                    <span className="font-medium">From:</span> {order.from_address}
                   </p>
                   <p className="text-sm text-gray-600 mb-3">
-                    <span className="font-medium">To:</span> {order.to}
+                    <span className="font-medium">To:</span> {order.to_address}
                   </p>
                   <button
                     onClick={() => acceptOrder(order.id)}
