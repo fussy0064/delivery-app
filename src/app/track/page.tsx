@@ -98,8 +98,8 @@ function TrackContent() {
 
         <div className="bg-white rounded-2xl shadow-sm overflow-hidden mb-5 h-72">
           <Map
-            driverLat={-6.7924}
-            driverLng={39.2083}
+            startLat={-6.7924}
+            startLng={39.2083}
             destLat={-6.78}
             destLng={39.22}
           />
