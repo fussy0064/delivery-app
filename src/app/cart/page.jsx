@@ -5,21 +5,14 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 
-type CartItem = {
-  id: string;
-  name: string;
-  price: number;
-  qty: number;
-};
-
-const sampleItems: CartItem[] = [
+const sampleItems = [
   { id: "1", name: "Chicken Pizza", price: 18000, qty: 1 },
   { id: "2", name: "Coca Cola 500ml", price: 2000, qty: 2 },
 ];
 
 export default function CartPage() {
   const router = useRouter();
-  const [items, setItems] = useState<CartItem[]>(sampleItems);
+  const [items, setItems] = useState(sampleItems);
   const [address, setAddress] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -27,7 +20,7 @@ export default function CartPage() {
 
   const total = items.reduce((sum, item) => sum + item.price * item.qty, 0);
 
-  const updateQty = (id: string, delta: number) => {
+  const updateQty = (id, delta) => {
     setItems((prev) =>
       prev
         .map((item) =>

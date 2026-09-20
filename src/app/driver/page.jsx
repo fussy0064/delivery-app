@@ -5,22 +5,12 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 
-type Order = {
-  id: string;
-  type: "food" | "package";
-  from_address: string;
-  to_address: string;
-  total_amount: number;
-  status: string;
-  created_at: string;
-};
-
 export default function DriverDashboard() {
   const router = useRouter();
-  const [orders, setOrders] = useState<Order[]>([]);
+  const [orders, setOrders] = useState([]);
   const [isOnline, setIsOnline] = useState(true);
   const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState(null);
 
   useEffect(() => {
     const checkUser = async () => {
@@ -48,7 +38,7 @@ export default function DriverDashboard() {
     setLoading(false);
   };
 
-  const acceptOrder = async (id: string) => {
+  const acceptOrder = async (id) => {
     const { error } = await supabase
       .from("orders")
       .update({ status: "accepted", driver_id: user?.id })
@@ -57,7 +47,7 @@ export default function DriverDashboard() {
     if (!error) fetchOrders();
   };
 
-  const updateStatus = async (id: string, status: string) => {
+  const updateStatus = async (id, status) => {
     const { error } = await supabase
       .from("orders")
       .update({ status })

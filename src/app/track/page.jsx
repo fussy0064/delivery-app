@@ -19,7 +19,7 @@ function TrackContent() {
   const searchParams = useSearchParams();
   const orderId = searchParams.get("id") || "";
 
-  const [order, setOrder] = useState<any>(null);
+  const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {

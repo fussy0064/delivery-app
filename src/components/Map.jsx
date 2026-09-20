@@ -22,14 +22,7 @@ const destIcon = L.icon({
   popupAnchor: [1, -34],
 });
 
-type Props = {
-  startLat?: number;
-  startLng?: number;
-  destLat?: number;
-  destLng?: number;
-};
-
-function Recenter({ lat, lng }: { lat: number; lng: number }) {
+function Recenter({ lat, lng }) {
   const map = useMap();
   useEffect(() => {
     map.setView([lat, lng], map.getZoom(), { animate: true });
@@ -37,7 +30,7 @@ function Recenter({ lat, lng }: { lat: number; lng: number }) {
   return null;
 }
 
-function getDistanceKm(lat1: number, lng1: number, lat2: number, lng2: number) {
+function getDistanceKm(lat1, lng1, lat2, lng2) {
   const R = 6371;
   const dLat = ((lat2 - lat1) * Math.PI) / 180;
   const dLng = ((lng2 - lng1) * Math.PI) / 180;
@@ -56,8 +49,8 @@ export default function Map({
   startLng = 39.2083,
   destLat = -6.78,
   destLng = 39.22,
-}: Props) {
-  const [driverPos, setDriverPos] = useState<[number, number]>([startLat, startLng]);
+}) {
+  const [driverPos, setDriverPos] = useState([startLat, startLng]);
   const [progress, setProgress] = useState(0);
 
   useEffect(() => {

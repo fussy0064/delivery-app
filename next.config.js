@@ -1,7 +1,5 @@
-import type { NextConfig } from "next";
-
-const nextConfig: NextConfig = {
-  // Helps with Leaflet and some packages on Vercel
+/** @type {import('next').NextConfig} */
+const nextConfig = {
   transpilePackages: ["react-leaflet", "leaflet"],
   images: {
     remotePatterns: [

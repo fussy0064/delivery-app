@@ -7,7 +7,7 @@ import { supabase } from "@/lib/supabase";
 
 export default function Home() {
   const router = useRouter();
-  const [mode, setMode] = useState<"food" | "package">("food");
+  const [mode, setMode] = useState("food");
   const [pickup, setPickup] = useState("");
   const [dropoff, setDropoff] = useState("");
   const [size, setSize] = useState("small");
