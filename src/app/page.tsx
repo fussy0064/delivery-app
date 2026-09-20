@@ -8,8 +8,6 @@ import { supabase } from "@/lib/supabase";
 export default function Home() {
   const router = useRouter();
   const [mode, setMode] = useState<"food" | "package">("food");
-
-  // Package form state
   const [pickup, setPickup] = useState("");
   const [dropoff, setDropoff] = useState("");
   const [size, setSize] = useState("small");
@@ -23,18 +21,15 @@ export default function Home() {
     return 12000;
   };
 
-  // Simple estimated distance (demo)
   const getDistance = () => {
     if (!pickup || !dropoff) return null;
-    // Fake but realistic distance for demo (later we use real geocoding)
     const base = pickup.length + dropoff.length;
-    const km = (3 + (base % 12)).toFixed(1);
-    return km;
+    return (3 + (base % 12)).toFixed(1);
   };
 
   const placePackageOrder = async () => {
     if (!pickup.trim() || !dropoff.trim()) {
-      setError("Please enter both pickup and delivery address");
+      setError("Enter both pickup and delivery addresses.");
       return;
     }
 
@@ -47,7 +42,7 @@ export default function Home() {
     } = await supabase.auth.getUser();
 
     if (!user) {
-      setError("Please login first");
+      setError("Please log in first.");
       setLoading(false);
       router.push("/login");
       return;
@@ -73,194 +68,316 @@ export default function Home() {
       return;
     }
 
-    setSuccess("Package order placed!");
+    setSuccess("Order placed successfully.");
     setLoading(false);
 
     setTimeout(() => {
       router.push(`/track?id=${data.id}`);
-    }, 1200);
+    }, 1000);
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-orange-50 to-white">
-      {/* Header */}
-      <header className="bg-white shadow-sm sticky top-0 z-10">
-        <div className="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-9 h-9 bg-orange-500 rounded-xl flex items-center justify-center text-white font-bold text-lg">
-              S
-            </div>
-            <span className="text-xl font-bold text-gray-900">SwiftDeliver</span>
-          </div>
+    <div className="min-h-screen" style={{ background: "#F7F5F2" }}>
+      <header
+        className="border-b sticky top-0 z-20"
+        style={{ background: "#FFFFFF", borderColor: "#E5E2DC" }}
+      >
+        <div className="max-w-5xl mx-auto px-5 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
+            <div
+              className="w-8 h-8 flex items-center justify-center text-white text-sm font-bold"
+              style={{ background: "#E85D04" }}
+            >
+              SD
+            </div>
+            <span
+              className="text-[15px] font-semibold tracking-tight"
+              style={{ color: "#111111" }}
+            >
+              SwiftDeliver
+            </span>
+          </div>
+
+          <nav className="flex items-center gap-6">
             <Link
               href="/login"
-              className="text-sm font-medium text-gray-600 hover:text-orange-500"
+              className="text-sm font-medium"
+              style={{ color: "#5C5C5C" }}
             >
-              Login
+              Log in
             </Link>
             <Link
               href="/register"
-              className="bg-orange-500 text-white text-sm font-medium px-4 py-2 rounded-full hover:bg-orange-600 transition"
+              className="text-sm font-medium px-4 py-2 text-white"
+              style={{ background: "#E85D04" }}
             >
-              Sign Up
+              Create account
             </Link>
-          </div>
+          </nav>
         </div>
       </header>
 
-      {/* Hero */}
-      <main className="max-w-5xl mx-auto px-4 py-10">
-        <div className="text-center mb-10">
-          <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-3">
-            Food & Packages. Delivered Fast.
+      <main className="max-w-5xl mx-auto px-5 py-14">
+        <section className="mb-14 max-w-2xl">
+          <h1
+            className="text-4xl sm:text-5xl font-semibold tracking-tight leading-[1.15] mb-4"
+            style={{ color: "#111111" }}
+          >
+            Food and packages delivered with precision.
           </h1>
-          <p className="text-gray-600 text-lg">
-            Order food or send packages in minutes
+          <p className="text-lg leading-relaxed" style={{ color: "#5C5C5C" }}>
+            Reliable local delivery for restaurants and personal parcels.
+            Track every order in real time.
           </p>
+        </section>
+
+        <div
+          className="flex mb-8 border"
+          style={{ borderColor: "#E5E2DC", width: "fit-content" }}
+        >
+          <button
+            onClick={() => setMode("food")}
+            className="px-6 py-2.5 text-sm font-medium"
+            style={{
+              background: mode === "food" ? "#E85D04" : "#FFFFFF",
+              color: mode === "food" ? "#FFFFFF" : "#5C5C5C",
+            }}
+          >
+            Food
+          </button>
+          <button
+            onClick={() => setMode("package")}
+            className="px-6 py-2.5 text-sm font-medium border-l"
+            style={{
+              background: mode === "package" ? "#E85D04" : "#FFFFFF",
+              color: mode === "package" ? "#FFFFFF" : "#5C5C5C",
+              borderColor: "#E5E2DC",
+            }}
+          >
+            Package
+          </button>
         </div>
 
-        {/* Mode Toggle */}
-        <div className="flex justify-center mb-8">
-          <div className="bg-white p-1 rounded-full shadow-md flex gap-1">
-            <button
-              onClick={() => setMode("food")}
-              className={`px-6 py-2.5 rounded-full text-sm font-semibold transition ${
-                mode === "food"
-                  ? "bg-orange-500 text-white"
-                  : "text-gray-600 hover:bg-gray-100"
-              }`}
-            >
-              🍔 Food
-            </button>
-            <button
-              onClick={() => setMode("package")}
-              className={`px-6 py-2.5 rounded-full text-sm font-semibold transition ${
-                mode === "package"
-                  ? "bg-orange-500 text-white"
-                  : "text-gray-600 hover:bg-gray-100"
-              }`}
-            >
-              📦 Package
-            </button>
-          </div>
-        </div>
+        <div
+          className="border p-8 max-w-xl"
+          style={{ background: "#FFFFFF", borderColor: "#E5E2DC" }}
+        >
+          {mode === "food" ? (
+            <div>
+              <h2
+                className="text-xl font-semibold mb-1"
+                style={{ color: "#111111" }}
+              >
+                Order food
+              </h2>
+              <p className="text-sm mb-6" style={{ color: "#5C5C5C" }}>
+                Browse restaurants and place your order in a few taps.
+              </p>
 
-        {/* Food Mode */}
-        {mode === "food" ? (
-          <div className="bg-white rounded-2xl shadow-lg p-6 max-w-2xl mx-auto">
-            <h2 className="text-xl font-bold mb-4">Order Food</h2>
-            <div className="space-y-4">
               <input
                 type="text"
-                placeholder="Search restaurants or dishes..."
-                className="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-orange-400"
+                placeholder="Search restaurants or dishes"
+                className="w-full border px-4 py-3 text-sm mb-5 focus:outline-none"
+                style={{ borderColor: "#E5E2DC", color: "#111111" }}
               />
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                {["Pizza", "Burgers", "Sushi", "Local Food", "Desserts", "Drinks"].map(
-                  (item) => (
-                    <button
-                      key={item}
-                      className="bg-orange-50 hover:bg-orange-100 text-orange-700 font-medium py-3 rounded-xl transition"
-                    >
-                      {item}
-                    </button>
-                  )
-                )}
+
+              <div className="grid grid-cols-2 gap-3 mb-6">
+                {["Pizza", "Burgers", "Local meals", "Drinks"].map((item) => (
+                  <button
+                    key={item}
+                    className="border py-3 text-sm font-medium text-left px-4"
+                    style={{ borderColor: "#E5E2DC", color: "#111111" }}
+                  >
+                    {item}
+                  </button>
+                ))}
               </div>
+
               <Link
                 href="/cart"
-                className="block w-full bg-orange-500 text-white font-semibold py-3.5 rounded-xl hover:bg-orange-600 transition mt-2 text-center"
+                className="block w-full text-center py-3.5 text-sm font-medium text-white"
+                style={{ background: "#E85D04" }}
               >
-                Go to Cart & Order
+                Continue to cart
               </Link>
             </div>
-          </div>
-        ) : (
-          /* Package Mode */
-          <div className="bg-white rounded-2xl shadow-lg p-6 max-w-2xl mx-auto">
-            <h2 className="text-xl font-bold mb-4">Send a Package</h2>
-            <div className="space-y-4">
-              <input
-                type="text"
-                value={pickup}
-                onChange={(e) => setPickup(e.target.value)}
-                placeholder="Pickup address"
-                className="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-orange-400"
-              />
-              <input
-                type="text"
-                value={dropoff}
-                onChange={(e) => setDropoff(e.target.value)}
-                placeholder="Delivery address"
-                className="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-orange-400"
-              />
-              <select
-                value={size}
-                onChange={(e) => setSize(e.target.value)}
-                className="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-orange-400"
+          ) : (
+            <div>
+              <h2
+                className="text-xl font-semibold mb-1"
+                style={{ color: "#111111" }}
               >
-                <option value="small">Small package (up to 5kg) – TSh 5,000</option>
-                <option value="medium">Medium package (5-15kg) – TSh 8,000</option>
-                <option value="large">Large package (15kg+) – TSh 12,000</option>
-              </select>
+                Send a package
+              </h2>
+              <p className="text-sm mb-6" style={{ color: "#5C5C5C" }}>
+                Enter pickup and drop-off details to get started.
+              </p>
 
-              <div className="bg-orange-50 rounded-xl p-3 text-center space-y-1">
-                <p className="text-sm text-gray-600">Estimated Price</p>
-                <p className="text-xl font-bold text-orange-600">
-                  TSh {getPrice().toLocaleString()}
-                </p>
+              <div className="space-y-4 mb-5">
+                <div>
+                  <label
+                    className="block text-xs font-medium mb-1.5"
+                    style={{ color: "#5C5C5C" }}
+                  >
+                    Pickup address
+                  </label>
+                  <input
+                    type="text"
+                    value={pickup}
+                    onChange={(e) => setPickup(e.target.value)}
+                    placeholder="Street, area, landmark"
+                    className="w-full border px-4 py-3 text-sm focus:outline-none"
+                    style={{ borderColor: "#E5E2DC", color: "#111111" }}
+                  />
+                </div>
+
+                <div>
+                  <label
+                    className="block text-xs font-medium mb-1.5"
+                    style={{ color: "#5C5C5C" }}
+                  >
+                    Delivery address
+                  </label>
+                  <input
+                    type="text"
+                    value={dropoff}
+                    onChange={(e) => setDropoff(e.target.value)}
+                    placeholder="Street, area, landmark"
+                    className="w-full border px-4 py-3 text-sm focus:outline-none"
+                    style={{ borderColor: "#E5E2DC", color: "#111111" }}
+                  />
+                </div>
+
+                <div>
+                  <label
+                    className="block text-xs font-medium mb-1.5"
+                    style={{ color: "#5C5C5C" }}
+                  >
+                    Package size
+                  </label>
+                  <select
+                    value={size}
+                    onChange={(e) => setSize(e.target.value)}
+                    className="w-full border px-4 py-3 text-sm focus:outline-none bg-white"
+                    style={{ borderColor: "#E5E2DC", color: "#111111" }}
+                  >
+                    <option value="small">Small (up to 5 kg) — TSh 5,000</option>
+                    <option value="medium">Medium (5–15 kg) — TSh 8,000</option>
+                    <option value="large">Large (15 kg+) — TSh 12,000</option>
+                  </select>
+                </div>
+              </div>
+
+              <div
+                className="border px-4 py-3 mb-5 flex justify-between items-center"
+                style={{ borderColor: "#E5E2DC", background: "#F7F5F2" }}
+              >
+                <div>
+                  <p className="text-xs" style={{ color: "#5C5C5C" }}>
+                    Estimated total
+                  </p>
+                  <p
+                    className="text-lg font-semibold"
+                    style={{ color: "#111111" }}
+                  >
+                    TSh {getPrice().toLocaleString()}
+                  </p>
+                </div>
                 {getDistance() && (
-                  <p className="text-sm text-gray-500">
-                    📍 Approx. distance: <span className="font-semibold">{getDistance()} km</span>
+                  <p className="text-sm" style={{ color: "#5C5C5C" }}>
+                    ~{getDistance()} km
                   </p>
                 )}
               </div>
 
               {error && (
-                <div className="bg-red-50 text-red-600 text-sm p-3 rounded-xl">
+                <p className="text-sm mb-4" style={{ color: "#B91C1C" }}>
                   {error}
-                </div>
+                </p>
               )}
               {success && (
-                <div className="bg-green-50 text-green-700 text-sm p-3 rounded-xl">
+                <p className="text-sm mb-4" style={{ color: "#4A5D4E" }}>
                   {success}
-                </div>
+                </p>
               )}
 
               <button
                 onClick={placePackageOrder}
                 disabled={loading}
-                className="w-full bg-orange-500 text-white font-semibold py-3.5 rounded-xl hover:bg-orange-600 transition disabled:opacity-60"
+                className="w-full py-3.5 text-sm font-medium text-white disabled:opacity-60"
+                style={{ background: "#E85D04" }}
               >
-                {loading ? "Placing Order..." : "Place Package Order"}
+                {loading ? "Placing order..." : "Place package order"}
               </button>
             </div>
-          </div>
-        )}
+          )}
+        </div>
 
-        {/* Features */}
-        <div className="grid sm:grid-cols-3 gap-6 mt-14">
-          <div className="text-center p-5">
-            <div className="text-3xl mb-2">⚡</div>
-            <h3 className="font-bold mb-1">Fast Delivery</h3>
-            <p className="text-sm text-gray-600">Average 25-40 minutes</p>
-          </div>
-          <div className="text-center p-5">
-            <div className="text-3xl mb-2">📍</div>
-            <h3 className="font-bold mb-1">Live Tracking</h3>
-            <p className="text-sm text-gray-600">See your order in real time</p>
-          </div>
-          <div className="text-center p-5">
-            <div className="text-3xl mb-2">🔒</div>
-            <h3 className="font-bold mb-1">Secure Payment</h3>
-            <p className="text-sm text-gray-600">Safe & encrypted</p>
+        <div
+          className="mt-16 pt-10 border-t"
+          style={{ borderColor: "#E5E2DC" }}
+        >
+          <div className="grid sm:grid-cols-3 gap-10">
+            <div>
+              <p
+                className="text-sm font-semibold mb-1"
+                style={{ color: "#111111" }}
+              >
+                Live tracking
+              </p>
+              <p
+                className="text-sm leading-relaxed"
+                style={{ color: "#5C5C5C" }}
+              >
+                Follow your driver from pickup to doorstep on the map.
+              </p>
+            </div>
+            <div>
+              <p
+                className="text-sm font-semibold mb-1"
+                style={{ color: "#111111" }}
+              >
+                Local drivers
+              </p>
+              <p
+                className="text-sm leading-relaxed"
+                style={{ color: "#5C5C5C" }}
+              >
+                Verified riders who know the city and handle packages carefully.
+              </p>
+            </div>
+            <div>
+              <p
+                className="text-sm font-semibold mb-1"
+                style={{ color: "#111111" }}
+              >
+                Clear pricing
+              </p>
+              <p
+                className="text-sm leading-relaxed"
+                style={{ color: "#5C5C5C" }}
+              >
+                See the total before you confirm. No hidden fees.
+              </p>
+            </div>
           </div>
         </div>
       </main>
 
-      <footer className="text-center text-sm text-gray-500 py-8">
-        © 2026 SwiftDeliver. Built for speed.
+      <footer
+        className="border-t py-8 mt-auto"
+        style={{ borderColor: "#E5E2DC", background: "#FFFFFF" }}
+      >
+        <div
+          className="max-w-5xl mx-auto px-5 flex flex-col sm:flex-row justify-between gap-4 text-sm"
+          style={{ color: "#5C5C5C" }}
+        >
+          <span>© 2026 SwiftDeliver</span>
+          <div className="flex gap-6">
+            <Link href="/login">Driver login</Link>
+            <Link href="/track">Track order</Link>
+          </div>
+        </div>
       </footer>
     </div>
   );
