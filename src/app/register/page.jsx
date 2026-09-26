@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabase";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -22,30 +21,25 @@ export default function RegisterPage() {
     setError("");
     setSuccess("");
 
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          full_name: name,
-          phone,
-          role,
-        },
-      },
+    const res = await fetch("/api/auth/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, email, phone, password, role }),
     });
+    const data = await res.json();
 
-    if (error) {
-      setError(error.message);
+    if (!res.ok) {
+      setError(data.error || "Registration failed");
       setLoading(false);
       return;
     }
 
-    setSuccess("Account created! Check your email to confirm, then login.");
+    setSuccess("Account created! Redirecting...");
     setLoading(false);
 
     setTimeout(() => {
-      router.push("/login");
-    }, 2500);
+      router.push(role === "driver" ? "/driver" : "/");
+    }, 1200);
   };
 
   return (

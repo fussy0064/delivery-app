@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabase";
 
 export default function Home() {
   const router = useRouter();
@@ -37,9 +36,8 @@ export default function Home() {
     setError("");
     setSuccess("");
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const meRes = await fetch("/api/auth/me");
+    const { user } = await meRes.json();
 
     if (!user) {
       setError("Please log in first.");
@@ -48,22 +46,21 @@ export default function Home() {
       return;
     }
 
-    const { data, error } = await supabase
-      .from("orders")
-      .insert({
-        user_id: user.id,
+    const res = await fetch("/api/orders", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
         type: "package",
-        status: "pending",
         from_address: pickup,
         to_address: dropoff,
         items: [{ name: `${size} package`, price: getPrice(), qty: 1 }],
         total_amount: getPrice(),
-      })
-      .select()
-      .single();
+      }),
+    });
+    const data = await res.json();
 
-    if (error) {
-      setError(error.message);
+    if (!res.ok) {
+      setError(data.error || "Could not place order.");
       setLoading(false);
       return;
     }
@@ -72,7 +69,7 @@ export default function Home() {
     setLoading(false);
 
     setTimeout(() => {
-      router.push(`/track?id=${data.id}`);
+      router.push(`/track?id=${data.order.id}`);
     }, 1000);
   };
 

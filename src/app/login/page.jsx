@@ -3,13 +3,11 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabase";
 
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState("user");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -18,22 +16,20 @@ export default function LoginPage() {
     setLoading(true);
     setError("");
 
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
+    const res = await fetch("/api/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
     });
+    const data = await res.json();
 
-    if (error) {
-      setError(error.message);
+    if (!res.ok) {
+      setError(data.error || "Login failed");
       setLoading(false);
       return;
     }
 
-    if (role === "driver") {
-      router.push("/driver");
-    } else {
-      router.push("/");
-    }
+    router.push(data.user.role === "driver" ? "/driver" : "/");
   };
 
   return (
@@ -48,27 +44,6 @@ export default function LoginPage() {
           </Link>
           <h1 className="text-2xl font-bold text-gray-900">Welcome back</h1>
           <p className="text-gray-500 text-sm mt-1">Login to continue</p>
-        </div>
-
-        <div className="flex bg-gray-100 rounded-full p-1 mb-6">
-          <button
-            type="button"
-            onClick={() => setRole("user")}
-            className={`flex-1 py-2 rounded-full text-sm font-semibold transition ${
-              role === "user" ? "bg-orange-500 text-white" : "text-gray-600"
-            }`}
-          >
-            Customer
-          </button>
-          <button
-            type="button"
-            onClick={() => setRole("driver")}
-            className={`flex-1 py-2 rounded-full text-sm font-semibold transition ${
-              role === "driver" ? "bg-orange-500 text-white" : "text-gray-600"
-            }`}
-          >
-            Driver
-          </button>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">

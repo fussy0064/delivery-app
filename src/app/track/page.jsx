@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useState, useEffect, Suspense } from "react";
 import dynamic from "next/dynamic";
 import { useSearchParams } from "next/navigation";
-import { supabase } from "@/lib/supabase";
 
 const Map = dynamic(() => import("@/components/Map"), {
   ssr: false,
@@ -29,13 +28,11 @@ function TrackContent() {
     }
 
     const fetchOrder = async () => {
-      const { data } = await supabase
-        .from("orders")
-        .select("*")
-        .eq("id", orderId)
-        .single();
-
-      setOrder(data);
+      const res = await fetch(`/api/orders/${orderId}`);
+      if (res.ok) {
+        const data = await res.json();
+        setOrder(data.order);
+      }
       setLoading(false);
     };
 
@@ -72,7 +69,7 @@ function TrackContent() {
             <div>
               <p className="text-sm text-gray-500">Order ID</p>
               <p className="font-bold text-lg">
-                {order ? order.id.slice(0, 8) : "No order"}
+                {order ? `#${order.id}` : "No order"}
               </p>
             </div>
             <span className="bg-orange-100 text-orange-700 text-sm font-semibold px-3 py-1 rounded-full capitalize">

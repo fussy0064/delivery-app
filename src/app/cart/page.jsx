@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabase";
 
 const sampleItems = [
   { id: "1", name: "Chicken Pizza", price: 18000, qty: 1 },
@@ -40,7 +39,8 @@ export default function CartPage() {
     setError("");
     setSuccess("");
 
-    const { data: { user } } = await supabase.auth.getUser();
+    const meRes = await fetch("/api/auth/me");
+    const { user } = await meRes.json();
 
     if (!user) {
       setError("Please login first");
@@ -49,27 +49,30 @@ export default function CartPage() {
       return;
     }
 
-    const { data, error } = await supabase.from("orders").insert({
-      user_id: user.id,
-      type: "food",
-      status: "pending",
-      from_address: "Restaurant",
-      to_address: address,
-      items: items,
-      total_amount: total,
-    }).select().single();
+    const res = await fetch("/api/orders", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        type: "food",
+        from_address: "Restaurant",
+        to_address: address,
+        items: items,
+        total_amount: total,
+      }),
+    });
+    const data = await res.json();
 
-    if (error) {
-      setError(error.message);
+    if (!res.ok) {
+      setError(data.error || "Could not place order");
       setLoading(false);
       return;
     }
 
-    setSuccess(`Order placed! ID: ${data.id.slice(0, 8)}`);
+    setSuccess(`Order placed! ID: #${data.order.id}`);
     setLoading(false);
 
     setTimeout(() => {
-      router.push(`/track?id=${data.id}`);
+      router.push(`/track?id=${data.order.id}`);
     }, 1500);
   };
 

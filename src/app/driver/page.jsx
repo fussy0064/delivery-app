@@ -3,57 +3,56 @@
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabase";
 
 export default function DriverDashboard() {
   const router = useRouter();
   const [orders, setOrders] = useState([]);
   const [isOnline, setIsOnline] = useState(true);
   const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState(null);
 
   useEffect(() => {
     const checkUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const meRes = await fetch("/api/auth/me");
+      const { user } = await meRes.json();
       if (!user) {
         router.push("/login");
         return;
       }
-      setUser(user);
       fetchOrders();
     };
     checkUser();
   }, [router]);
 
   const fetchOrders = async () => {
-    const { data, error } = await supabase
-      .from("orders")
-      .select("*")
-      .in("status", ["pending", "accepted", "picked", "on_the_way"])
-      .order("created_at", { ascending: false });
-
-    if (!error && data) {
-      setOrders(data);
+    const res = await fetch("/api/orders?scope=board");
+    if (res.ok) {
+      const data = await res.json();
+      setOrders(data.orders);
     }
     setLoading(false);
   };
 
   const acceptOrder = async (id) => {
-    const { error } = await supabase
-      .from("orders")
-      .update({ status: "accepted", driver_id: user?.id })
-      .eq("id", id);
-
-    if (!error) fetchOrders();
+    const res = await fetch(`/api/orders/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status: "accepted" }),
+    });
+    if (res.ok) fetchOrders();
   };
 
   const updateStatus = async (id, status) => {
-    const { error } = await supabase
-      .from("orders")
-      .update({ status })
-      .eq("id", id);
+    const res = await fetch(`/api/orders/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status }),
+    });
+    if (res.ok) fetchOrders();
+  };
 
-    if (!error) fetchOrders();
+  const logout = async () => {
+    await fetch("/api/auth/logout", { method: "POST" });
+    router.push("/login");
   };
 
   const available = orders.filter((o) => o.status === "pending");
@@ -90,10 +89,7 @@ export default function DriverDashboard() {
               {isOnline ? "● Online" : "○ Offline"}
             </button>
             <button
-              onClick={async () => {
-                await supabase.auth.signOut();
-                router.push("/login");
-              }}
+              onClick={logout}
               className="text-sm text-gray-500 hover:text-orange-500"
             >
               Logout
@@ -132,7 +128,7 @@ export default function DriverDashboard() {
                       <span className="text-xs font-medium bg-orange-100 text-orange-700 px-2 py-0.5 rounded">
                         {order.type === "food" ? "🍔 Food" : "📦 Package"}
                       </span>
-                      <p className="font-semibold mt-1">{order.id.slice(0, 8)}</p>
+                      <p className="font-semibold mt-1">#{order.id}</p>
                     </div>
                     <span className="font-bold text-green-600">
                       TSh {Number(order.total_amount).toLocaleString()}
@@ -199,7 +195,7 @@ export default function DriverDashboard() {
                       <span className="text-xs font-medium bg-gray-100 text-gray-700 px-2 py-0.5 rounded">
                         {order.type === "food" ? "🍔 Food" : "📦 Package"}
                       </span>
-                      <p className="font-semibold mt-1">{order.id.slice(0, 8)}</p>
+                      <p className="font-semibold mt-1">#{order.id}</p>
                     </div>
                     <span className="font-bold text-green-600">
                       TSh {Number(order.total_amount).toLocaleString()}
